@@ -1,8 +1,8 @@
 #include <iostream>
 #include <thread>
-#include <semaphore>
 #include <vector>
 #include <chrono>
+#include <atomic>
 
 #include "utils/utils.hpp"
 
@@ -11,19 +11,30 @@
 
 using namespace std;
 
-counting_semaphore<2> semaphore(1);
+class SpinLock {
+    atomic_flag lock_flag = ATOMIC_FLAG_INIT;
+public:
+    void lock() {
+        while (lock_flag.test_and_set(memory_order_acquire)) {}
+    }
+
+    void unlock() {
+        lock_flag.clear(memory_order_release);
+    }
+};
+
+SpinLock spinlock;
 
 void run() {
     auto start = chrono::steady_clock::now();
-    semaphore.acquire();
+    spinlock.lock();
     for(int i = 0; i < numIter; i++) {
         cout << generateRandom() << " ";
-        //this_thread::sleep_for(chrono::milliseconds(10));
     }
     cout << endl;
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
-    semaphore.release();
+    spinlock.unlock();
     cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
 }
 

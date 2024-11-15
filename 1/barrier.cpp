@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include <semaphore>
+#include <barrier>
 #include <vector>
 #include <chrono>
 
@@ -11,19 +11,17 @@
 
 using namespace std;
 
-counting_semaphore<2> semaphore(1);
+barrier sync_pointt(N);
 
 void run() {
     auto start = chrono::steady_clock::now();
-    semaphore.acquire();
+    sync_pointt.arrive_and_wait();
     for(int i = 0; i < numIter; i++) {
         cout << generateRandom() << " ";
-        //this_thread::sleep_for(chrono::milliseconds(10));
     }
     cout << endl;
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
-    semaphore.release();
     cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
 }
 

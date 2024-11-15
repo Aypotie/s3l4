@@ -2,7 +2,6 @@
 #include <vector>
 #include <thread>
 #include <semaphore>
-#include <barrier>
 #include <chrono>
 #include <mutex>
 
@@ -26,7 +25,7 @@ void runMutex() {
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
     mtx.unlock();
-    cout << elapsed.count() << " seconds" << endl;
+    cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
 }
 
 template <typename T>
