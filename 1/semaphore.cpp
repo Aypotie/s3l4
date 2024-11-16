@@ -11,7 +11,7 @@
 
 using namespace std;
 
-counting_semaphore<2> semaphore(1);
+counting_semaphore<1> semaphore(1);
 
 void run() {
     auto start = chrono::steady_clock::now();
