@@ -3,7 +3,8 @@
 #include <vector>
 #include <chrono>
 #include <atomic>
-
+#include <mutex>
+#include <string>
 #include "utils/utils.hpp"
 
 #define N 5
@@ -16,25 +17,38 @@ atomic_bool ready(false); // Условие для активного ожида
 
 void spin_wait() {
     // Ожидаем до тех пор, пока ready не станет true
-    while (!ready.load(std::memory_order_acquire)) {
+    while (!ready.load(memory_order_acquire)) {
         this_thread::yield(); // Уступаем другим потокам
     }
 }
+
+// Мьютекс для синхронизации вывода
+mutex cout_mutex;
 
 void run() {
     auto start = chrono::steady_clock::now();
     
     spin_wait(); // Активное ожидание
 
+    // Генерация случайных символов
+    string output; // Локальный буфер для вывода
     for (int i = 0; i < numIter; i++) {
-        cout << generateRandom() << " ";
+        output += generateRandom();
+        output += " ";
     }
 
-    cout << endl;
-    
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << output << endl;
+    }
+
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
-    cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
+
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
+    }
 }
 
 template <typename T>
@@ -44,11 +58,10 @@ void primitive(T func) {
         threads.emplace_back(func);
     }
 
-    // Даем потокам немного времени, чтобы они успели запуститься
     this_thread::sleep_for(chrono::milliseconds(100));
 
     // Устанавливаем ready в true, чтобы потоки прекратили активное ожидание
-    ready.store(true, std::memory_order_release);
+    ready.store(true, memory_order_release);
 
     for (auto& th : threads) {
         th.join();

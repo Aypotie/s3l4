@@ -32,7 +32,7 @@ template <typename T>
 void primitive(T func){
     vector<thread> threads;
     for( int i = 0; i < N; i++) {
-        threads.emplace_back(func); //название примитива 
+        threads.emplace_back(func); 
     }
 
     for (int i = 0; i < threads.size(); i++) {

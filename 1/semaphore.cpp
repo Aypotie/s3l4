@@ -11,11 +11,11 @@
 
 using namespace std;
 
-counting_semaphore<1> semaphore(1);
+counting_semaphore<2> semaphore(2);
 
 void run() {
     auto start = chrono::steady_clock::now();
-    semaphore.acquire();
+    semaphore.acquire(); //захватывает семафор
     for(int i = 0; i < numIter; i++) {
         cout << generateRandom() << " ";
         //this_thread::sleep_for(chrono::milliseconds(10));

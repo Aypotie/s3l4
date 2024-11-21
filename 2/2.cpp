@@ -26,14 +26,23 @@ vector<string> birth = {"24.06.2004", "13.05.2005", "04.11.1979", "31.12.2024", 
 vector<string> doctors = {"Хирург", "Ортопед", "Терапевт", "Офтальмолог"};
 vector<string> categories = {"А", "Б", "В", "Г", "Д"};
 
-// Функция для проверки пригодности к службе (категория "А" — пригоден)
 bool isFitForService(const Conscript& conscript) {
     for (const auto& record : conscript.records) {
-        if (record.category == "А") {  // Сравниваем с строкой "А"
-            return true;  // Если хотя бы одно заключение "А", призывник пригоден
+        if (record.category == "Д") {
+            return false; 
         }
     }
-    return false;  // Если нет категории "А", не пригоден
+    for (const auto& record : conscript.records) {
+        if (record.category == "А") {  
+            return true;  
+        }
+    }
+    for (const auto& record : conscript.records) {
+        if (record.category != "В") {  
+            return false;  
+        }
+    }
+    return false;  
 }
 
 // Функция обработки без многопоточности
@@ -50,7 +59,7 @@ vector<Conscript> processWithoutThreads(const vector<Conscript>& conscripts) {
 // Функция обработки с многопоточностью
 vector<Conscript> processWithThreads(const vector<Conscript>& conscripts, int numThreads) {
     vector<Conscript> fitConscripts;
-    vector<future<vector<Conscript>>> futures;
+    vector<future<vector<Conscript>>> futures; //будет хранить результаты выполнения асинхронных задач для каждого потока
 
     // Разделяем данные на несколько частей для параллельной обработки
     size_t chunkSize = conscripts.size() / numThreads;
@@ -58,7 +67,7 @@ vector<Conscript> processWithThreads(const vector<Conscript>& conscripts, int nu
 
     auto processChunk = [](const vector<Conscript>& conscripts, size_t start, size_t end) {
         vector<Conscript> result;
-        for (size_t i = start; i < end; ++i) {
+        for (size_t i = start; i < end; i++) {
             if (isFitForService(conscripts[i])) {
                 result.push_back(conscripts[i]);
             }
@@ -68,9 +77,9 @@ vector<Conscript> processWithThreads(const vector<Conscript>& conscripts, int nu
 
     // Создаем потоки
     size_t startIndex = 0;
-    for (int i = 0; i < numThreads; ++i) {
+    for (int i = 0; i < numThreads; i++) {
         size_t endIndex = startIndex + chunkSize + (i < remainder ? 1 : 0);
-        futures.push_back(async(launch::async, processChunk, ref(conscripts), startIndex, endIndex));
+        futures.push_back(async(launch::async, processChunk, ref(conscripts), startIndex, endIndex)); //создает асинхронный поток
         startIndex = endIndex;
     }
 
@@ -100,11 +109,15 @@ void test(const vector<Conscript>& conscripts) {
     chrono::duration<double> durationWithThreads = end - start;
     cout << "Время обработки с многопоточностью: " << durationWithThreads.count() << " секунд" << endl;
 
-    // Вывод списка пригодных к службе призывников
+    // Вывод списка пригодных к службе призывников с заключениями врачей
     cout << "Пригодные к службе (с использованием многопоточности):" << endl;
-    for (const auto& conscript : fitConscriptsWithThreads) {
-        cout << conscript.fullName << " (" << conscript.birthDate << ")" << endl;
-    }
+    //for (const auto& conscript : fitConscriptsWithThreads) {
+        //cout << conscript.fullName << " (" << conscript.birthDate << ")" << endl;
+        // Выводим медицинские заключения
+        //for (const auto& record : conscript.records) {
+        //   cout << "    Специальность: " << record.specialty << ", Категория: " << record.category << endl;
+        //}
+    //}
 }
 
 vector<Conscript> generateRandomConscripts(int n) {
@@ -147,7 +160,7 @@ int main() {
     test(conscripts1);
     cout << "=========" << endl;
     cout << "Test 2:" << endl;
-    auto conscripts2 = generateRandomConscripts(1000);
+    auto conscripts2 = generateRandomConscripts(1000000);
     test(conscripts2);
     return 0;
 }

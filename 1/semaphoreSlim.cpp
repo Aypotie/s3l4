@@ -3,6 +3,7 @@
 #include <semaphore>
 #include <vector>
 #include <chrono>
+#include <mutex>
 
 #include "utils/utils.hpp"
 
@@ -11,31 +12,50 @@
 
 using namespace std;
 
-counting_semaphore<2> semaphore(2);
+// Создаем семафор, ограничивающий доступ к критической секции до 2 потоков
+counting_semaphore<1> semaphore(1);
+
+// Мьютекс для синхронизации доступа к cout
+mutex cout_mutex;
 
 void run() {
     auto start = chrono::steady_clock::now();
-    semaphore.acquire();
-    for(int i = 0; i < numIter; i++) {
-        cout << generateRandom() << " ";
-        //this_thread::sleep_for(chrono::milliseconds(10));
+
+    semaphore.acquire(); 
+
+    string output; // буфер вывода
+    for (int i = 0; i < numIter; i++) {
+        output += generateRandom();
+        output += " ";
     }
-    cout << endl;
+
+    // Синхронизированный вывод
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << output << endl;
+    }
+
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
-    semaphore.release();
-    cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
+
+    semaphore.release(); 
+
+    // Синхронизированный вывод времени выполнения
+    {
+        lock_guard<mutex> lock(cout_mutex);
+        cout << "Elapsed time: " << elapsed.count() << " seconds" << endl;
+    }
 }
 
 template <typename T>
-void primitive(T func){
+void primitive(T func) {
     vector<thread> threads;
-    for( int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         threads.emplace_back(func);
     }
 
-    for (int i = 0; i < threads.size(); i++) {
-        threads[i].join();
+    for (auto& th : threads) {
+        th.join();
     }
 }
 

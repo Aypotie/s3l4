@@ -19,7 +19,6 @@ int phil[N] = { 0, 1, 2, 3, 4 };
 mutex mtx; 
 condition_variable S[N];  // Переменные условия для каждого философа
 
-// Проверка, может ли философ начать есть
 void test(int phnum) {
     if (state[phnum] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
         state[phnum] = EATING;
@@ -28,9 +27,9 @@ void test(int phnum) {
     }
 }
 
-// Функция для того, чтобы философ взял вилки
+
 void take_fork(int phnum) {
-    unique_lock<mutex> lock(mtx);  // Используем переименованный мьютекс `mtx`
+    unique_lock<mutex> lock(mtx);  
 
     // Философ голоден
     state[phnum] = HUNGRY;
